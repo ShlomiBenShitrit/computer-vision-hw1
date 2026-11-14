@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+.vscode/
+.idea/
+icv83551/datasets/cifar-10-batches-py/
+*.npz
+*.tar.gz
+*.zip
