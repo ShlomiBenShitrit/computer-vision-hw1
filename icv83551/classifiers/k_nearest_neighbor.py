@@ -125,7 +125,8 @@ class KNearestNeighbor(object):
         test_sq = np.sum(X ** 2, axis=1, keepdims=True)      # (500, 1)
         train_sq = np.sum(self.X_train ** 2, axis=1)         # (5000,)
         cross = X @ self.X_train.T                           # (500, 5000)
-        dists = np.sqrt(test_sq + train_sq - 2 * cross)      # (500, 5000)
+        # Rounding errors can make a distance slightly negative, so clip at 0
+        dists = np.sqrt(np.maximum(test_sq + train_sq - 2 * cross, 0))  # (500, 5000)
 
         return dists
 
