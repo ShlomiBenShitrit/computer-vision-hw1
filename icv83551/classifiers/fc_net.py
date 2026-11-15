@@ -210,7 +210,10 @@ class FullyConnectedNet(object):
         # beta2, etc. Scale parameters should be initialized to ones and shift     #
         # parameters should be initialized to zeros.                               #
         ############################################################################
-
+        layer_dims = [input_dim] + hidden_dims + [num_classes]
+        for i in range(self.num_layers):
+            self.params['W%d' % (i + 1)] = weight_scale * np.random.randn(layer_dims[i], layer_dims[i + 1])
+            self.params['b%d' % (i + 1)] = np.zeros(layer_dims[i + 1])
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -280,7 +283,17 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
-
+        caches = []
+        out = X
+        for i in range(1, self.num_layers):
+            out, cache = affine_relu_forward(out, self.params['W%d' % i], self.params['b%d' % i])
+            caches.append(cache)
+            if self.use_dropout:
+                out, dropout_cache = dropout_forward(out, self.dropout_param)
+                caches.append(dropout_cache)
+        L = self.num_layers
+        scores, cache = affine_forward(out, self.params['W%d' % L], self.params['b%d' % L])
+        caches.append(cache)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -303,7 +316,19 @@ class FullyConnectedNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
+        loss, dout = softmax_loss(scores, y)
+        for i in range(1, L + 1):
+            W = self.params['W%d' % i]
+            loss += 0.5 * self.reg * np.sum(W * W)
 
+        dout, grads['W%d' % L], grads['b%d' % L] = affine_backward(dout, caches.pop())
+        for i in range(L - 1, 0, -1):
+            if self.use_dropout:
+                dout = dropout_backward(dout, caches.pop())
+            dout, grads['W%d' % i], grads['b%d' % i] = affine_relu_backward(dout, caches.pop())
+
+        for i in range(1, L + 1):
+            grads['W%d' % i] += self.reg * self.params['W%d' % i]
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
